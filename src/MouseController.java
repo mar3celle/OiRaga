@@ -15,7 +15,8 @@ public class MouseController implements MouseHandler {
         mouse.addEventListener(MouseEventType.MOUSE_MOVED);
     }
 
-    @Override
+
+@Override
     public void mouseClicked(MouseEvent mouseEvent) {
 
     }
