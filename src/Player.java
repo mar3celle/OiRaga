@@ -3,12 +3,11 @@ import com.codeforall.simplegraphics.graphics.Ellipse;
 
 public class Player {
 
-    private double x, y;        // posição
-    private double dx, dy;      // direção
-    private double radius;      // raio atual
-    private boolean alive = true;
+    protected double x, y;        // posição
+    protected double dx, dy;      // direção
+    protected double radius;      // raio atual
+    protected boolean alive = true;
 
-    private static final Color PLAYER_COLOR = Color.BLUE;
 
     private static final double BASE_SPEED = 600.0;         // px/s quando pequeno
     private static final double SPEED_RADIUS_FLOOR = 12.0;  // nao fica muito rapido quando pequeno
@@ -35,7 +34,7 @@ public class Player {
     }
 
     // Velocidade atual (px/s) — desacelera com o tamanho ______________
-    private double getSpeed(){
+    protected double getSpeed(){
         return BASE_SPEED / Math.max(SPEED_RADIUS_FLOOR, radius);
     }
 
@@ -50,7 +49,7 @@ public class Player {
     }
 
     // Desenha o círculo; apaga o anterior ____________
-    public void draw(){
+    public void draw(Color color){
         if (lastShape != null) lastShape.delete();
 
         int d  = (int) Math.round(radius * 2);
@@ -58,10 +57,13 @@ public class Player {
         int sy = (int) Math.round(y - radius);
 
         Ellipse circle = new Ellipse(sx, sy, d, d);
-        circle.setColor(PLAYER_COLOR);
+        circle.setColor(color);
         circle.fill();
 
         lastShape = circle;
+    }
+    public void draw(){
+        draw(Color.BLUE);
     }
 
     // Cresce por área _____________________________
