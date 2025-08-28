@@ -3,6 +3,9 @@ package com.codeforall.online.game.players;
 import com.codeforall.simplegraphics.graphics.Color;
 import com.codeforall.simplegraphics.graphics.Ellipse;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Pallets {
 
     private final int size = 5;
@@ -13,6 +16,8 @@ public class Pallets {
     private double minY = 0; // substituir por getCanvaMinX
     private double maxY = 500; // substituir por getCanvaMaxY
     private boolean colision;
+
+    private List<Ellipse> pallets = new ArrayList<>(); // ao criar cells este array vai guarda las para verificarmos as colisoes
 
     public Pallets(int amount){
         this.amount = amount;
@@ -38,9 +43,15 @@ public class Pallets {
                 case 9 -> Color.YELLOW;
                 default -> Color.BLACK;
             });
-
         }
     }
 
+    public List<Ellipse> getPallets(){ // getter para invocar na classe playermain
+        return pallets;
+    }
 
+
+    public void delete() {
+
+    }
 }
