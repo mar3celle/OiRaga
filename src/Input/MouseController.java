@@ -1,3 +1,5 @@
+package Input;
+
 import com.codeforall.simplegraphics.mouse.Mouse;
 import com.codeforall.simplegraphics.mouse.MouseEvent;
 import com.codeforall.simplegraphics.mouse.MouseEventType;
