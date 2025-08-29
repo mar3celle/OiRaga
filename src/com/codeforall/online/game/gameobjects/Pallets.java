@@ -9,27 +9,23 @@ import java.util.List;
 
 public class Pallets {
 
-    private final int size = 5;
-    private int increaseValue;
-    private int amount;
-    private double minX = Grid.PADDING;
-    private double minY = Grid.PADDING;
-    private double radius;
-    private boolean colision;
+    private final int size = 10;
 
-    private List<Ellipse> pallets = new ArrayList<>(); // ao criar cells este array vai guarda las para verificarmos as colisoes
-
-    public Pallets(int amount, int maxX, int maxY){
-        this.amount = amount;
-
+    public Pallets(int amount, double maxX, double maxY){
         for(int i = 0; i < amount; i++){
-            double randomX = minX + Math.random() * (maxX - minX);
-            double randomY = minY + Math.random() * (maxY - minY);
+            // get random (x,y) location
+            double randomX = Grid.PADDING + Math.random() * (maxX - Grid.PADDING);
+            double randomY = Grid.PADDING + Math.random() * (maxY - Grid.PADDING);
 
-            int randomColor = (int) Math.floor(Math.random() * 10);
-
+            // creates the pallet
             Ellipse size = new Ellipse(randomX, randomY, this.size,this.size);
+
+            // adds to list for colisions
+            pallets.add(size);
+
+            // styling
             size.fill();
+            int randomColor = (int) Math.floor(Math.random() * 10);
             size.setColor(switch (randomColor) {
                 case 0 -> Color.BLUE;
                 case 1 -> Color.CYAN;
@@ -47,12 +43,10 @@ public class Pallets {
     }
 
 
-    public List<Ellipse> getPallets(){ // getter para invocar na classe playermain
+    private List<Ellipse> pallets = new ArrayList<>(); // ao criar cells este array vai guarda las para verificarmos as colisoes
+
+    public List<Ellipse> getPallets(){
         return pallets;
     }
 
-
-    public void delete() {
-
-    }
 }

@@ -5,6 +5,8 @@ import com.codeforall.online.game.Grid.Grid;
 import com.codeforall.online.game.gameobjects.Pallets;
 import com.codeforall.online.game.inputs.MouseController;
 
+import java.sql.SQLOutput;
+
 public class Game {
 
     public static void main(String[] args) throws InterruptedException {
@@ -13,7 +15,8 @@ public class Game {
         grid.init();
 
         // draw pallets
-        Pallets allPallets = new Pallets(1000, grid.getGameFieldMaxX(), grid.getGameFieldMaxY());
+        //Pallets allPallets = new Pallets(100, grid.getGameFieldMaxX(), grid.getGameFieldMaxY());
+        Pallets allPallets = new Pallets(100, 1500, 750);
 
         int[] cell = grid.getRandomCell();
         int row = cell[0];
@@ -42,8 +45,11 @@ public class Game {
 
             player.draw();
 
+            // colision check with pallets
+            player.checkPalletCollision(allPallets);
 
             Thread.sleep((int)(dt * 1000));
         }
+
     }
 }

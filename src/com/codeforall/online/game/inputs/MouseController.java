@@ -28,7 +28,7 @@ public class MouseController implements MouseHandler {
         mouseX= mouseEvent.getX();
         mouseY= mouseEvent.getY();
         active=true;
-        System.out.println("mouseMoved: " + mouseX + ", " + mouseY);
+        //System.out.println("mouseMoved: " + mouseX + ", " + mouseY);
         //sout é pra testar se o metodo ta a ser chamado
 
     }

@@ -39,8 +39,12 @@ public class Grid {
     public int getCellSize() { return cellSize; }
     public int getCols() { return cols; }
     public int getRows() { return rows; }
-    public int getGameFieldMaxX(){return cols * cellSize;}
-    public int getGameFieldMaxY(){return cols * cellSize;}
+    public int getGameFieldMaxX(){
+        System.out.println(this.cols * cellSize);
+        return this.rows * cellSize;}
+    public int getGameFieldMaxY(){
+        System.out.println(this.rows * cellSize);
+        return this.rows * cellSize;}
 
     public int rowToY(int row) { return PADDING + cellSize * row; }
     public int columnToX(int column) { return PADDING + cellSize * column; }

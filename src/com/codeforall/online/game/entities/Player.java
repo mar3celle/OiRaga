@@ -14,7 +14,7 @@ public class Player {
     private double radius;
     private boolean alive = true;
 
-    private Color playerColor;
+    private final Color playerColor;
     private static final double BASE_SPEED = 1800.0;
     private static final double SPEED_RADIUS_FLOOR = 12.0;
 
@@ -95,45 +95,38 @@ public class Player {
 
 
 
-//    colisao entre as apllets
-
-
-    public void checkPalletCollision(Pallets pallets){
+    // pallet collision
+    public void checkPalletCollision(Pallets pallets) {
         Iterator<Ellipse> it = pallets.getPallets().iterator();
 
-        while(it.hasNext()){ // percorre todas as pallets ate haver uma colisao
+        while (it.hasNext()) {
             Ellipse ellipse = it.next();
 
+            if (checkCollision(this, ellipse)) {
+                double palletRadius = ellipse.getWidth() / 2.0;
+                double palletArea = Math.PI * palletRadius * palletRadius;
 
-            if (checkCollision(player, pallets)){
-                grow(2);  // aumenta o tamanho
-                pallets.delete(); // vai remover a cell "apanhada" / "comida" do ecra
-                it.remove();  // remove da lista
+                growByArea(palletArea); // aumenta o tamanho do jogador
+                ellipse.delete();       // remove do ecrã
+                it.remove();            // remove da lista
             }
         }
     }
 
-    public boolean checkCollision(Player a, Pallets b) {  // retorna "true" se houver alguma colisao, vai calculando a distancia para detetar as colisoes
-
-        double ax = a.getX() +  a.getRadius();
-        double ay = a.getY() + a.getRadius();
-        double bx = b.getX() +  b.getRadius;
-        double by = b.getY() + b.getHeight() / 2;
+    private boolean checkCollision(Player a, Ellipse b) {
+        double ax = a.getX();
+        double ay = a.getY();
+        double bx = b.getX() + b.getWidth() / 2.0;
+        double by = b.getY() + b.getWidth() / 2.0;
 
         double dx = ax - bx;
         double dy = ay - by;
         double distance = Math.sqrt(dx * dx + dy * dy);
 
-        double radiusA = a.getWidth() / 2;
-        double radiusB = b.getWidth() / 2;
+        double radiusA = a.getRadius();
+        double radiusB = b.getWidth() / 2.0;
 
         return distance < (radiusA + radiusB);
-
-    }
-
-    private void grow(double increase){  // faz a nossa esfera "player1" aumentar o tamanho
-        size += increase;
-        player.grow(increase, increase);
     }
 }
 
