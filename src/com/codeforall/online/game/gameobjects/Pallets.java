@@ -49,4 +49,12 @@ public class Pallets {
         return pallets;
     }
 
+    // for player collision
+    public void addPallet(double x, double y, double radius) {
+        Ellipse ellipse = new Ellipse(x - radius, y - radius, radius * 2, radius * 2);
+        ellipse.setColor(Color.BLUE); // MUDAR PARA RANDOM, IMPLEMENTAR METODO
+        ellipse.fill();
+        pallets.add(ellipse);
+    }
+
 }
