@@ -27,7 +27,7 @@ public class Grid {
             line.fill();
         }
 
-        // Desenha linhas verticais
+        // draw vertical lines
         for(int c = 1; c < cols; c++){
             Rectangle line = new Rectangle(PADDING + c * cellSize, PADDING, 1, rows * cellSize);
             line.setColor(Color.LIGHT_GRAY);

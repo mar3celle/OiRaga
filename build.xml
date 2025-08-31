@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="OiRaga" default="jarfile">
+
+    <!-- ========== INIT ========== -->
+    <target name="init" description="Inicializa propriedades">
+        <property name="project.name" value="OiRaga" />
+        <property name="src.dir" value="src" />
+        <!-- A tua main -->
+        <property name="main.class" value="com.codeforall.online.game.Main" />
+        <property name="build.dir" value="build" />
+        <property name="classes.dir" value="${build.dir}/classes" />
+        <property name="resources.dir" value="resources" />
+        <property name="lib.dir" value="lib" />
+
+        <!-- Classpath com todos os JARs em lib/ -->
+        <path id="classpath">
+            <fileset dir="${lib.dir}" includes="**/*.jar"/>
+        </path>
+    </target>
+
+    <!-- ========== TAREFAS DE SUPORTE ========== -->
+    <target name="prepare" depends="init" description="Cria diretórios de build">
+        <mkdir dir="${classes.dir}"/>
+        <mkdir dir="${build.dir}"/>
+    </target>
+
+    <target name="clean" depends="init" description="Limpa diretórios de build">
+        <delete dir="${build.dir}"/>
+    </target>
+
+    <!-- ========== COMPILAÇÃO ========== -->
+    <target name="compile" depends="prepare" description="Compila o código-fonte">
+        <javac srcdir="${src.dir}" destdir="${classes.dir}" includeantruntime="false"
+               source="17" target="17" encoding="UTF-8">
+            <classpath refid="classpath"/>
+        </javac>
+
+        <!-- Copia resources (se existirem) -->
+        <copy todir="${classes.dir}">
+            <fileset dir="${resources.dir}" erroronmissingdir="false"/>
+        </copy>
+    </target>
+
+    <!-- ========== EMPACOTAMENTO ========== -->
+    <target name="jarfile" depends="compile" description="Gera o JAR executável">
+        <jar destfile="${build.dir}/${project.name}.jar" basedir="${classes.dir}">
+            <manifest>
+                <attribute name="Main-Class" value="${main.class}"/>
+                <!-- O zipgroupfileset abaixo "gordo-fica" o jar com as libs -->
+                <attribute name="Created-By" value="Apache Ant"/>
+            </manifest>
+
+            <!-- Junta as libs dentro do JAR (evita dor de cabeça com Class-Path) -->
+            <zipgroupfileset dir="${lib.dir}" includes="*.jar"/>
+        </jar>
+        <echo message="JAR gerado em ${build.dir}/${project.name}.jar"/>
+    </target>
+
+    <!-- ========== EXECUTAR DIRETO PELO ANT (OPCIONAL) ========== -->
+    <target name="run" depends="compile" description="Corre o jogo sem criar JAR">
+        <java classname="${main.class}" fork="true">
+            <classpath>
+                <pathelement path="${classes.dir}"/>
+                <path refid="classpath"/>
+            </classpath>
+        </java>
+    </target>
+
+</project>

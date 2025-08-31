@@ -43,7 +43,7 @@ public class Pallets {
     }
 
 
-    private List<Ellipse> pallets = new ArrayList<>(); // ao criar cells este array vai guarda las para verificarmos as colisoes
+    private List<Ellipse> pallets = new ArrayList<>(); //when cells are created, save collisions to verify
 
     public List<Ellipse> getPallets(){
         return pallets;
@@ -52,7 +52,7 @@ public class Pallets {
     // for player collision
     public void addPallet(double x, double y, double radius) {
         Ellipse ellipse = new Ellipse(x - radius, y - radius, radius * 2, radius * 2);
-        ellipse.setColor(Color.BLUE); // MUDAR PARA RANDOM, IMPLEMENTAR METODO
+        ellipse.setColor(Color.BLUE); // change to RANDOM, implements method
         ellipse.fill();
         pallets.add(ellipse);
     }

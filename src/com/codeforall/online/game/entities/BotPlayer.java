@@ -35,14 +35,14 @@ public class BotPlayer extends BasePlayer {
     public void update(double dt, int worldW, int worldH) {
         timeSinceLastChange += dt;
 
-        // renovar alvo aleatório ocasionalmente
+        // update target
         double distToTarget = Math.hypot(targetX - getX(), targetY - getY());
         if (distToTarget < 20 || rng.nextDouble() < 0.005 || timeSinceLastChange > 5.0) {
             pickNewTarget(worldW, worldH);
             timeSinceLastChange = 0;
         }
 
-        // lógica de IA: analisar outros jogadores
+        // AI logic: analyse other players
         BasePlayer closest = null;
         double closestDist = Double.MAX_VALUE;
 
