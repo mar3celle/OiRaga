@@ -8,7 +8,7 @@
         <!-- A tua main -->
         <property name="main.class" value="com.codeforall.online.game.Main" />
         <property name="build.dir" value="build" />
-        <property name="classes.dir" value="${build.dir}/classes" />
+        <property name="classes.dir" value="src/build/classes" />
         <property name="resources.dir" value="resources" />
         <property name="lib.dir" value="lib" />
 
@@ -20,30 +20,30 @@
 
     <!-- ========== TAREFAS DE SUPORTE ========== -->
     <target name="prepare" depends="init" description="Cria diretórios de build">
-        <mkdir dir="${classes.dir}"/>
-        <mkdir dir="${build.dir}"/>
+        <mkdir dir="src/build/classes"/>
+        <mkdir dir="src/build"/>
     </target>
 
     <target name="clean" depends="init" description="Limpa diretórios de build">
-        <delete dir="${build.dir}"/>
+        <delete dir="src/build"/>
     </target>
 
     <!-- ========== COMPILAÇÃO ========== -->
     <target name="compile" depends="prepare" description="Compila o código-fonte">
-        <javac srcdir="${src.dir}" destdir="${classes.dir}" includeantruntime="false"
+        <javac srcdir="${src.dir}" destdir="src/build/classes" includeantruntime="false"
                source="17" target="17" encoding="UTF-8">
             <classpath refid="classpath"/>
         </javac>
 
         <!-- Copia resources (se existirem) -->
-        <copy todir="${classes.dir}">
+        <copy todir="src/build/classes">
             <fileset dir="${resources.dir}" erroronmissingdir="false"/>
         </copy>
     </target>
 
     <!-- ========== EMPACOTAMENTO ========== -->
     <target name="jarfile" depends="compile" description="Gera o JAR executável">
-        <jar destfile="${build.dir}/${project.name}.jar" basedir="${classes.dir}">
+        <jar destfile="${build.dir}/${project.name}.jar" basedir="src/build/classes">
             <manifest>
                 <attribute name="Main-Class" value="${main.class}"/>
                 <!-- O zipgroupfileset abaixo "gordo-fica" o jar com as libs -->
@@ -60,7 +60,7 @@
     <target name="run" depends="compile" description="Corre o jogo sem criar JAR">
         <java classname="${main.class}" fork="true">
             <classpath>
-                <pathelement path="${classes.dir}"/>
+                <pathelement path="src/build/classes"/>
                 <path refid="classpath"/>
             </classpath>
         </java>

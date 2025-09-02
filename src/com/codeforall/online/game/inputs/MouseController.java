@@ -11,6 +11,10 @@ public class MouseController implements MouseHandler {
     private volatile double mouseX;
     private volatile double mouseY;
     private volatile boolean active= false;
+    //click on mouse to exit or restart
+    private volatile boolean clicked = false;
+    private volatile double clickX;
+    private volatile double clickY;
 
     public MouseController(){
         this.mouse= new Mouse(this);
@@ -20,7 +24,9 @@ public class MouseController implements MouseHandler {
 
 @Override
     public void mouseClicked(MouseEvent mouseEvent) {
-
+    clickX= mouseEvent.getX();
+    clickY= mouseEvent.getY();
+    clicked= true;
     }
 
     @Override
@@ -29,7 +35,6 @@ public class MouseController implements MouseHandler {
         mouseY= mouseEvent.getY();
         active=true;
         //System.out.println("mouseMoved: " + mouseX + ", " + mouseY);
-        //sout é pra testar se o metodo ta a ser chamado
 
     }
 
@@ -43,5 +48,13 @@ public class MouseController implements MouseHandler {
 
     public double getMouseY() {
         return mouseY;
+    }
+    //devolve o click /para de clicar
+    public boolean pollClick(double[] xyOut){
+        if (!clicked) return false;
+        xyOut[0] = clickX;
+        xyOut[1] = clickY;
+        clicked = false;
+        return true;
     }
 }
