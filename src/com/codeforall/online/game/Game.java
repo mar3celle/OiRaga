@@ -1,5 +1,7 @@
 package com.codeforall.online.game;
 
+import com.codeforall.simplegraphics.graphics.Text;
+import com.codeforall.simplegraphics.graphics.Color;
 import com.codeforall.online.game.entities.BasePlayer;
 import com.codeforall.online.game.entities.BotPlayer;
 import com.codeforall.online.game.entities.Player;
@@ -11,6 +13,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Game {
+    // Pontuação
+    private static final int PELLET_POINTS = 1;
+    private static final int BOT_POINTS = 50; // precisa coincidir com BasePlayer
+
+    // CHANGED: tornados estáticos para poderem ser usados de main (estático)
+    private static int score = 0;                 // CHANGED
+    private static int highScore = 0;             // CHANGED
+    private static final HighScoreManager highMan = new HighScoreManager(); // CHANGED
+    private static Text hudScore, hudHigh;        // CHANGED
+
+    // Global list of all players
+    public static List<BasePlayer> players = new ArrayList<>();
 
     public static void main(String[] args) throws InterruptedException {
 
@@ -38,9 +52,13 @@ public class Game {
         Player player = new Player(playerX, playerY, 12.0);
         players.add(player);
 
+        //create highscore and draw
+        highScore = highMan.loadHighScore();
+        updateHud();   //  "Score: 0  High: <valor>"
+
         // Calculate game grid dimensions
-        int worldW = grid.getCols() * grid.getCellSize() - Grid.PADDING;
-        int worldH = grid.getRows() * grid.getCellSize() - Grid.PADDING;
+        int worldW = Grid.PADDING + grid.getCols() * grid.getCellSize();   // CHANGED: respeita padding à esquerda
+        int worldH = Grid.PADDING + grid.getRows() * grid.getCellSize();   // CHANGED: respeita padding no topo
 
         // Bot spawn loop, to spawn in different places
         for (int i = 0; i < numberOfBots; i++) {
@@ -70,11 +88,19 @@ public class Game {
 
             // Update all players
             for (BasePlayer p : players) {
-                if (p.isAlive()) {
-                    p.update(dt, worldW, worldH);              // move player or bot
-                    p.checkPalletCollision(allPallets);        // eat pallets if collided
-                    p.draw();                                  // render on screen
+                if (!p.isAlive()) continue;
+
+                p.update(dt, worldW, worldH);
+
+                // pallets -> pontos (só contam para o humano; BasePlayer retorna pts só do humano)
+                int gained = p.checkPalletCollision(allPallets);
+                if (gained > 0) {
+                    score += gained * PELLET_POINTS;
+                    if (score > highScore) { highScore = score; }
+                    updateHud();
                 }
+
+                p.draw();
             }
 
             // Check collisions between players
@@ -82,15 +108,40 @@ public class Game {
                 BasePlayer p1 = players.get(i);
                 for (int j = i + 1; j < players.size(); j++) {
                     BasePlayer p2 = players.get(j);
-                    p1.checkPlayerCollision(p2, allPallets);   // handle fight logic
+                    // handle fight logic
+                    //somar pontos vindos da colisão (quando o player elimina um bot)
+                    int gainedVs = p1.checkPlayerCollision(p2, allPallets);
+                    if (gainedVs > 0) {
+                        score += gainedVs;                  //(BOT_POINTS já aplicados no BasePlayer)
+                        if (score > highScore) { highScore = score; }
+                        updateHud();
+                    }
                 }
             }
 
             // control frame rate
             Thread.sleep((int)(dt * 1000));
         }
+
+        //  ao terminar, persistir o high score
+        highScore = highMan.updateIfBest(score, highScore);  // CHANGED
     }
 
-    // Global list of all players
-    public static List<BasePlayer> players = new ArrayList<>();
+    //método estático para atualizar o HUD (score/high)
+    private static void updateHud() {
+        // apaga textos anteriores
+        if (hudScore != null) hudScore.delete();
+        if (hudHigh  != null) hudHigh.delete();
+
+        int x = Grid.PADDING + 16;
+        int y = Grid.PADDING - 1;
+
+        hudScore = new Text(x, y, "Score: " + score);
+        hudScore.setColor(Color.DARK_GRAY);
+        hudScore.draw();
+
+        hudHigh  = new Text(x + 140, y, "High: " + highScore);
+        hudHigh.setColor(Color.DARK_GRAY);
+        hudHigh.draw();
+    }
 }

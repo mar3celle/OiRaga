@@ -3,6 +3,7 @@ package com.codeforall.online.game.entities;
 import com.codeforall.online.game.gameobjects.Pallets;
 import com.codeforall.simplegraphics.graphics.Color;
 import com.codeforall.simplegraphics.graphics.Ellipse;
+import com.codeforall.online.game.Grid.Grid;
 
 import java.util.Iterator;
 import java.util.Random;
@@ -10,7 +11,8 @@ import java.util.Random;
 public abstract class BasePlayer {
 
     // Position and movement
-    protected double x, y;       // current position
+    protected double x;
+    protected double y;       // current position
     protected double dx, dy;     // movement direction (normalized)
 
     protected double radius;
@@ -54,8 +56,9 @@ public abstract class BasePlayer {
         x += dx * v * dt;
         y += dy * v * dt;
 
-        x = Math.max(radius, Math.min(worldW - radius, x));
-        y = Math.max(radius, Math.min(worldH - radius, y));
+        int pad = Grid.PADDING;
+        x = Math.max(pad + radius, Math.min(worldW - radius, x));
+        y = Math.max(pad + radius, Math.min(worldH - radius, y));
     }
 
     // Draws the player constantly
@@ -86,18 +89,29 @@ public abstract class BasePlayer {
     }
 
 
-    public boolean isAlive() { return alive; }
+    public boolean isAlive() {
+        return alive;
+    }
 
     // getters
-    public double getX() { return x; }
-    public double getY() { return y; }
-    public double getRadius() { return radius; }
+    public double getX() {
+        return x;
+    }
+
+    public double getY() {
+        return y;
+    }
+
+    public double getRadius() {
+        return radius;
+    }
 
     // Abstract method to be implemented by subclasses (Player, BotPlayer)
     public abstract void update(double dt, int worldW, int worldH);
 
     // Player - Pallets collision
-    public void checkPalletCollision(Pallets pallets) {
+    public int checkPalletCollision(Pallets pallets) {
+        int points = 0;
         Iterator<Ellipse> it = pallets.getPallets().iterator();
 
         while (it.hasNext()) {
@@ -110,8 +124,12 @@ public abstract class BasePlayer {
                 growByArea(palletArea); // increase size
                 ellipse.delete();       // remove from screen
                 it.remove();            // remove from list
+                if (this instanceof com.codeforall.online.game.entities.Player) {
+                    points += 1;            //da pontos se quem comeu foi o Player e nao o bot
+                }
             }
         }
+        return points;
     }
 
     private boolean checkCollision(BasePlayer a, Ellipse b) {
@@ -132,8 +150,8 @@ public abstract class BasePlayer {
 
     // Player - player collision
     // The larger player "eats" the smaller one, converting its area into pallets
-    public void checkPlayerCollision(BasePlayer other, Pallets pallets) {
-        if (!this.isAlive() || !other.isAlive()) return;
+    public int checkPlayerCollision(BasePlayer other, Pallets pallets) {
+        if (!this.isAlive() || !other.isAlive()) return 0;
 
         double dx = this.getX() - other.getX();
         double dy = this.getY() - other.getY();
@@ -144,7 +162,7 @@ public abstract class BasePlayer {
         if (distance < radiusSum) {
             // Determine winner and loser based on size
             BasePlayer winner = (this.getRadius() >= other.getRadius()) ? this : other;
-            BasePlayer loser  = (winner == this) ? other : this;
+            BasePlayer loser = (winner == this) ? other : this;
 
             double loserArea = Math.PI * loser.getRadius() * loser.getRadius();
             loser.delete(); // remove loser from game
@@ -152,7 +170,7 @@ public abstract class BasePlayer {
             // Convert loser’s area into multiple pallets around its position
             double palletRadius = 5.0;
             double palletArea = Math.PI * palletRadius * palletRadius;
-            int numPallets = (int)(loserArea / palletArea);
+            int numPallets = (int) (loserArea / palletArea);
 
             double centerX = loser.getX();
             double centerY = loser.getY();
@@ -165,7 +183,13 @@ public abstract class BasePlayer {
 
                 pallets.addPallet(px, py, palletRadius);
             }
-        }
 
+            //if winner is a Player and looser is a bot, 50pts
+            if (winner instanceof com.codeforall.online.game.entities.Player
+                    && loser instanceof com.codeforall.online.game.entities.BotPlayer) {
+                return 50; // matar bot = 50 pts
+            }
+        }
+        return 0;
     }
 }

@@ -1,6 +1,7 @@
 package com.codeforall.online.game.entities;
 
 import com.codeforall.online.game.Game;
+import com.codeforall.online.game.Grid.Grid;
 import com.codeforall.online.game.entities.Player;
 import java.util.Random;
 
@@ -27,9 +28,12 @@ public class BotPlayer extends BasePlayer {
     // Hunt ai
     private void pickNewTarget(int worldW, int worldH) {
         double margin = 30;
-        targetX = margin + rng.nextDouble() * (worldW - 2 * margin);
-        targetY = margin + rng.nextDouble() * (worldH - 2 * margin);
-    }
+        int pad = Grid.PADDING;
+        // intervalo: [pad + margin, (worldW - margin)] e idem para Y
+        targetX = pad + margin + rng.nextDouble() * ((worldW - pad) - 2 * margin);
+        targetY = pad + margin + rng.nextDouble() * ((worldH - pad) - 2 * margin);
+        }
+
 
     @Override
     public void update(double dt, int worldW, int worldH) {
