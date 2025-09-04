@@ -3,7 +3,7 @@ package com.codeforall.online.game.entities;
 import com.codeforall.online.game.gameobjects.Pallets;
 import com.codeforall.simplegraphics.graphics.Color;
 import com.codeforall.simplegraphics.graphics.Ellipse;
-import com.codeforall.online.game.Grid.Grid;
+import com.codeforall.online.game.grid.Grid;
 
 import java.util.Iterator;
 import java.util.Random;
@@ -13,7 +13,8 @@ public abstract class BasePlayer {
     // Position and movement
     protected double x;
     protected double y;       // current position
-    protected double dx, dy;     // movement direction (normalized)
+    protected double dx;
+    protected  double dy;     // movement direction (normalized)
 
     protected double radius;
     protected boolean alive = true;
@@ -132,6 +133,9 @@ public abstract class BasePlayer {
         return points;
     }
 
+
+    // Player - player collision
+    // The larger player "eats" the smaller one, converting its area into pallets
     private boolean checkCollision(BasePlayer a, Ellipse b) {
         double ax = a.getX();
         double ay = a.getY();
@@ -150,46 +154,60 @@ public abstract class BasePlayer {
 
     // Player - player collision
     // The larger player "eats" the smaller one, converting its area into pallets
+    // CHANGED: metodo dividido em partes menores para legibilidade manutenção
     public int checkPlayerCollision(BasePlayer other, Pallets pallets) {
         if (!this.isAlive() || !other.isAlive()) return 0;
+        if (!intersects(this, other)) return 0;                 // CHANGED
 
-        double dx = this.getX() - other.getX();
-        double dy = this.getY() - other.getY();
+        BasePlayer winner = pickWinner(this, other);            // CHANGED
+        BasePlayer loser  = (winner == this) ? other : this;    // CHANGED
+
+        double loserArea = areaOf(loser);                       // CHANGED
+        loser.delete();
+
+        spawnPalletsFromLoser(loser, loserArea, pallets);       // CHANGED
+        return pointsForKill(winner, loser);                    // CHANGED
+    }
+
+    // CHANGED: helpers extraídos do metodo principal
+
+    private boolean intersects(BasePlayer a, BasePlayer b) {    // CHANGED
+        double dx = a.getX() - b.getX();
+        double dy = a.getY() - b.getY();
         double distance = Math.sqrt(dx * dx + dy * dy);
+        double radiusSum = a.getRadius() + b.getRadius();
+        return distance < radiusSum;
+    }
 
-        double radiusSum = this.getRadius() + other.getRadius();
+    private BasePlayer pickWinner(BasePlayer a, BasePlayer b) {
+        return (a.getRadius() >= b.getRadius()) ? a : b;
+    }
 
-        if (distance < radiusSum) {
-            // Determine winner and loser based on size
-            BasePlayer winner = (this.getRadius() >= other.getRadius()) ? this : other;
-            BasePlayer loser = (winner == this) ? other : this;
+    private double areaOf(BasePlayer p) {
+        return Math.PI * p.getRadius() * p.getRadius();
+    }
 
-            double loserArea = Math.PI * loser.getRadius() * loser.getRadius();
-            loser.delete(); // remove loser from game
+    private void spawnPalletsFromLoser(BasePlayer loser, double loserArea, Pallets pallets) {
+        double palletRadius = 5.0;
+        double palletArea = Math.PI * palletRadius * palletRadius;
+        int numPallets = (int) (loserArea / palletArea);
 
-            // Convert loser’s area into multiple pallets around its position
-            double palletRadius = 5.0;
-            double palletArea = Math.PI * palletRadius * palletRadius;
-            int numPallets = (int) (loserArea / palletArea);
+        double centerX = loser.getX();
+        double centerY = loser.getY();
 
-            double centerX = loser.getX();
-            double centerY = loser.getY();
+        for (int i = 0; i < numPallets; i++) {
+            double angle = Math.random() * 2 * Math.PI;
+            double spread = Math.random() * 30; // spread within 30px radius
+            double px = centerX + Math.cos(angle) * spread;
+            double py = centerY + Math.sin(angle) * spread;
 
-            for (int i = 0; i < numPallets; i++) {
-                double angle = Math.random() * 2 * Math.PI;
-                double spread = Math.random() * 30; // spread within 30px radius
-                double px = centerX + Math.cos(angle) * spread;
-                double py = centerY + Math.sin(angle) * spread;
-
-                pallets.addPallet(px, py, palletRadius);
-            }
-
-            //if winner is a Player and looser is a bot, 50pts
-            if (winner instanceof com.codeforall.online.game.entities.Player
-                    && loser instanceof com.codeforall.online.game.entities.BotPlayer) {
-                return 50; // matar bot = 50 pts
-            }
+            pallets.addPallet(px, py, palletRadius);
         }
-        return 0;
+    }
+
+    private int pointsForKill(BasePlayer winner, BasePlayer loser) { // CHANGED
+        boolean humanWins = winner instanceof com.codeforall.online.game.entities.Player;
+        boolean botLoses  = loser  instanceof com.codeforall.online.game.entities.BotPlayer;
+        return (humanWins && botLoses) ? 50 : 0; // alinhar com Game/BOT_POINTS
     }
 }
