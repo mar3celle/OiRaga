@@ -157,16 +157,26 @@ public abstract class BasePlayer {
     // CHANGED: metodo dividido em partes menores para legibilidade manutenção
     public int checkPlayerCollision(BasePlayer other, Pallets pallets) {
         if (!this.isAlive() || !other.isAlive()) return 0;
-        if (!intersects(this, other)) return 0;                 // CHANGED
+        if (!intersects(this, other)) return 0;
 
-        BasePlayer winner = pickWinner(this, other);            // CHANGED
-        BasePlayer loser  = (winner == this) ? other : this;    // CHANGED
+        BasePlayer winner = pickWinner(this, other);
+        BasePlayer loser  = (winner == this) ? other : this;
 
-        double loserArea = areaOf(loser);                       // CHANGED
+        if (winner instanceof com.codeforall.online.game.entities.BotPlayer
+                && loser instanceof com.codeforall.online.game.entities.Player) {
+
+            com.codeforall.online.game.entities.Player human =
+                    (com.codeforall.online.game.entities.Player) loser;
+
+            if (human.isInvincible()) {
+                return 0; // ignora: bot não consegue comer o player enquanto invencível
+            }
+        }
+        double loserArea = areaOf(loser);
         loser.delete();
 
-        spawnPalletsFromLoser(loser, loserArea, pallets);       // CHANGED
-        return pointsForKill(winner, loser);                    // CHANGED
+        spawnPalletsFromLoser(loser, loserArea, pallets);
+        return pointsForKill(winner, loser);
     }
 
     // CHANGED: helpers extraídos do metodo principal

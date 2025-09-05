@@ -1,5 +1,7 @@
 package com.codeforall.online.game;
 
+import com.codeforall.online.game.inputs.MyKeyboard;
+import com.codeforall.simplegraphics.graphics.Canvas;
 import com.codeforall.simplegraphics.graphics.Text;
 import com.codeforall.simplegraphics.graphics.Color;
 import com.codeforall.online.game.entities.BasePlayer;
@@ -8,6 +10,7 @@ import com.codeforall.online.game.entities.Player;
 import com.codeforall.online.game.grid.Grid;
 import com.codeforall.online.game.gameobjects.Pallets;
 import com.codeforall.online.game.inputs.MouseController;
+import com.codeforall.simplegraphics.graphics.Rectangle;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,8 +25,10 @@ public class Game {
     private final HighScoreManager highMan = new HighScoreManager();
     private Text hudScore;
     private Text hudHigh;
+    Text pausedText = null;
+    boolean paused = false;
 
-// campo para win condition
+    // campo para win condition
     private Text winText;
 
     // Global list of all players
@@ -31,6 +36,7 @@ public class Game {
 
     //instanciar loop do jogo
     public void run() throws InterruptedException {
+        Canvas.getCanvas();
         // Initialize the game grid
         Grid grid = new Grid(100, 50);
         grid.init();
@@ -56,7 +62,10 @@ public class Game {
         players.clear();                 // lista limpa ao iniciar
         players.add(player);
 
-        // cria o highscore e desenha
+        //create beyboard
+        MyKeyboard keys = new MyKeyboard();
+
+        // create highscore and draw
         highScore = highMan.loadHighScore();
         updateHud(); //"Score: 0  High: <valor>"
 
@@ -83,13 +92,45 @@ public class Game {
         // Main game loop
         while (player.isAlive()) {
 
+            // ESC → sair
+            if (keys.pollExit()) {           // CHANGED
+                break;                       // CHANGED
+            }
+
+            // P → alterna pausa
+            if (keys.pollPause()) {
+                paused = !paused;
+                if (paused) {
+                    if (pausedText != null) pausedText.delete();
+                    pausedText = new Text(Grid.PADDING + 260, Grid.PADDING + 20, "PAUSED");
+                    pausedText.grow(10,10);
+                    pausedText.setColor(Color.DARK_GRAY);
+                    pausedText.draw();
+                } else {
+                    if (pausedText != null) { pausedText.delete(); pausedText = null; }
+                }
+            }
+
+            if (paused) {                    // CHANGED
+                Thread.sleep(16);            // ~60fps enquanto pausado
+                continue;                    // CHANGED: não atualiza jogo
+            }
+
             // Update player direction based on mouse input
             if (mouse.isActive()) {
                 double dx = mouse.getMouseX() - player.getX();
                 double dy = mouse.getMouseY() - player.getY();
                 player.setDirection(dx, dy);
             }
+            // I → invencibilidade
+            if (keys.pollCheatInvincible()) {
+                player.activateInvincibilityMillis(8000);
+            }
 
+            //CHEAT tecla I deixa invencivel
+            if (keys.pollCheatInvincible()) {
+                player.activateInvincibilityMillis(8000); // 8000 ms = 8 segundos
+            }
             // Update all players
             for (BasePlayer p : players) {
                 if (!p.isAlive()) continue;
@@ -141,6 +182,22 @@ public class Game {
 
         // save highscore
         highScore = highMan.updateIfBest(score, highScore);
+        // click to restart
+        double[] click = new double[2];
+        while (true) {
+            if (mouse.pollClick(click)) {
+                clearBackground();
+                run();   //restart
+                return;  // sai desta execução
+            }
+            Thread.sleep(16);
+        }
+    }
+    private void clearBackground() {
+        // desenha um retângulo maior que a área de jogo
+        Rectangle bg = new Rectangle(0, 0, 2000, 1200);
+        bg.setColor(new Color(240, 244, 248)); // mesma cor do fundo
+        bg.fill();
     }
 
     private void updateHud() {

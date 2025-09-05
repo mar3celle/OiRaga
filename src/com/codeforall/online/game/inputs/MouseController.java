@@ -19,6 +19,7 @@ public class MouseController implements MouseHandler {
     public MouseController(){
         this.mouse= new Mouse(this);
         mouse.addEventListener(MouseEventType.MOUSE_MOVED);
+        mouse.addEventListener(MouseEventType.MOUSE_CLICKED);
     }
 
 
