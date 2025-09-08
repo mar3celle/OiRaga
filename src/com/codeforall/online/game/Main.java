@@ -1,8 +1,11 @@
 package com.codeforall.online.game;
 
-public class Main {
+import com.codeforall.online.game.Game;
+import com.codeforall.online.game.MenuBox;
 
-    public static void main(String[] args) throws InterruptedException {
-        new Game().run();
+public class Main {
+    public static void main(String[] args) {
+        Game mainGame = new Game();
+        MenuBox.init(mainGame); // inicia o menu principal
     }
 }

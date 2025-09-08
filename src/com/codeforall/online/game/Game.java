@@ -1,5 +1,7 @@
 package com.codeforall.online.game;
 
+import com.codeforall.online.game.buttons.Buttons;
+import com.codeforall.online.game.inputs.MouseMenus;
 import com.codeforall.online.game.inputs.MyKeyboard;
 import com.codeforall.simplegraphics.graphics.Canvas;
 import com.codeforall.simplegraphics.graphics.Text;
@@ -11,12 +13,14 @@ import com.codeforall.online.game.grid.Grid;
 import com.codeforall.online.game.gameobjects.Pallets;
 import com.codeforall.online.game.inputs.MouseController;
 import com.codeforall.simplegraphics.graphics.Rectangle;
+import com.codeforall.simplegraphics.pictures.Picture;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class Game {
 
+    //private static final List<MenuBox.activeButtons = new ArrayList<>();
     private static final int PELLET_POINTS = 1;
     private static final int BOT_POINTS = 50; // precisa coincidir com BasePlayer (pointsForKill)
 
@@ -45,7 +49,7 @@ public class Game {
         int palletAmount = 300; // number of pallets to spawn
         int palletDistributionX = grid.getCols() * grid.getCellSize() - Grid.PADDING; // Spawn inside the game rectangle
         int palletDistributionY = grid.getRows() * grid.getCellSize() - Grid.PADDING; // Spawn inside the game rectangle
-        int numberOfBots = 7; // number of bots to spawn
+        int numberOfBots = 1; // number of bots to spawn
 
         // Create pallets
         Pallets allPallets = new Pallets(palletAmount, palletDistributionX, palletDistributionY);
@@ -217,11 +221,30 @@ public class Game {
         hudHigh.draw();
     }
 
-    private void showWinBanner() {  // CHANGED
-        if (winText != null) winText.delete();
-        winText = new Text(Grid.PADDING + 250, Grid.PADDING + 20, "YOU WIN!");
-        winText.grow(10, 10);
-        winText.setColor(Color.BLACK);
-        winText.draw();
+    private void showWinBanner() {
+
+        Picture banner = new Picture(300, 200, "resources/win-menu-elements/win-menu_provisional.png");
+        banner.draw();
+
+        // Mostra pontuação final
+        Text finalScore = new Text(banner.getX() + 80, banner.getY() + 50, "Final Score: " + score);
+        finalScore.setColor(Color.DARK_GRAY);
+        finalScore.grow(10, 10);
+        finalScore.draw();
+
+        // Espera 5 segundos e volta ao menu principal
+        new Thread(() -> {
+            try {
+                Thread.sleep(5000); // espera 5 segundos
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            banner.delete();
+            finalScore.delete();
+
+            // Volta ao menu principal
+            MenuBox.drawMainMenu(this);
+        }).start();
     }
 }
