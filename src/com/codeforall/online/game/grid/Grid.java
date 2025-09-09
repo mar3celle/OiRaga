@@ -1,4 +1,4 @@
-package com.codeforall.online.game.Grid;
+package com.codeforall.online.game.grid;
 
 import com.codeforall.simplegraphics.graphics.Rectangle;
 import com.codeforall.simplegraphics.graphics.Color;

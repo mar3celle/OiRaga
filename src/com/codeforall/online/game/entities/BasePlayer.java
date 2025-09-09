@@ -3,6 +3,7 @@ package com.codeforall.online.game.entities;
 import com.codeforall.online.game.gameobjects.Pallets;
 import com.codeforall.simplegraphics.graphics.Color;
 import com.codeforall.simplegraphics.graphics.Ellipse;
+import com.codeforall.online.game.grid.Grid;
 
 import java.util.Iterator;
 import java.util.Random;
@@ -10,8 +11,10 @@ import java.util.Random;
 public abstract class BasePlayer {
 
     // Position and movement
-    protected double x, y;       // current position
-    protected double dx, dy;     // movement direction (normalized)
+    protected double x;
+    protected double y;       // current position
+    protected double dx;
+    protected  double dy;     // movement direction (normalized)
 
     protected double radius;
     protected boolean alive = true;
@@ -54,8 +57,9 @@ public abstract class BasePlayer {
         x += dx * v * dt;
         y += dy * v * dt;
 
-        x = Math.max(radius, Math.min(worldW - radius, x));
-        y = Math.max(radius, Math.min(worldH - radius, y));
+        int pad = Grid.PADDING;
+        x = Math.max(pad + radius, Math.min(worldW - radius, x));
+        y = Math.max(pad + radius, Math.min(worldH - radius, y));
     }
 
     // Draws the player constantly
@@ -86,18 +90,29 @@ public abstract class BasePlayer {
     }
 
 
-    public boolean isAlive() { return alive; }
+    public boolean isAlive() {
+        return alive;
+    }
 
     // getters
-    public double getX() { return x; }
-    public double getY() { return y; }
-    public double getRadius() { return radius; }
+    public double getX() {
+        return x;
+    }
+
+    public double getY() {
+        return y;
+    }
+
+    public double getRadius() {
+        return radius;
+    }
 
     // Abstract method to be implemented by subclasses (Player, BotPlayer)
     public abstract void update(double dt, int worldW, int worldH);
 
     // Player - Pallets collision
-    public void checkPalletCollision(Pallets pallets) {
+    public int checkPalletCollision(Pallets pallets) {
+        int points = 0;
         Iterator<Ellipse> it = pallets.getPallets().iterator();
 
         while (it.hasNext()) {
@@ -110,10 +125,17 @@ public abstract class BasePlayer {
                 growByArea(palletArea); // increase size
                 ellipse.delete();       // remove from screen
                 it.remove();            // remove from list
+                if (this instanceof com.codeforall.online.game.entities.Player) {
+                    points += 1;            //da pontos se quem comeu foi o Player e nao o bot
+                }
             }
         }
+        return points;
     }
 
+
+    // Player - player collision
+    // The larger player "eats" the smaller one, converting its area into pallets
     private boolean checkCollision(BasePlayer a, Ellipse b) {
         double ax = a.getX();
         double ay = a.getY();
@@ -132,40 +154,70 @@ public abstract class BasePlayer {
 
     // Player - player collision
     // The larger player "eats" the smaller one, converting its area into pallets
-    public void checkPlayerCollision(BasePlayer other, Pallets pallets) {
-        if (!this.isAlive() || !other.isAlive()) return;
+    // CHANGED: metodo dividido em partes menores para legibilidade manutenção
+    public int checkPlayerCollision(BasePlayer other, Pallets pallets) {
+        if (!this.isAlive() || !other.isAlive()) return 0;
+        if (!intersects(this, other)) return 0;
 
-        double dx = this.getX() - other.getX();
-        double dy = this.getY() - other.getY();
-        double distance = Math.sqrt(dx * dx + dy * dy);
+        BasePlayer winner = pickWinner(this, other);
+        BasePlayer loser  = (winner == this) ? other : this;
 
-        double radiusSum = this.getRadius() + other.getRadius();
+        if (winner instanceof com.codeforall.online.game.entities.BotPlayer
+                && loser instanceof com.codeforall.online.game.entities.Player) {
 
-        if (distance < radiusSum) {
-            // Determine winner and loser based on size
-            BasePlayer winner = (this.getRadius() >= other.getRadius()) ? this : other;
-            BasePlayer loser  = (winner == this) ? other : this;
+            com.codeforall.online.game.entities.Player human =
+                    (com.codeforall.online.game.entities.Player) loser;
 
-            double loserArea = Math.PI * loser.getRadius() * loser.getRadius();
-            loser.delete(); // remove loser from game
-
-            // Convert loser’s area into multiple pallets around its position
-            double palletRadius = 5.0;
-            double palletArea = Math.PI * palletRadius * palletRadius;
-            int numPallets = (int)(loserArea / palletArea);
-
-            double centerX = loser.getX();
-            double centerY = loser.getY();
-
-            for (int i = 0; i < numPallets; i++) {
-                double angle = Math.random() * 2 * Math.PI;
-                double spread = Math.random() * 30; // spread within 30px radius
-                double px = centerX + Math.cos(angle) * spread;
-                double py = centerY + Math.sin(angle) * spread;
-
-                pallets.addPallet(px, py, palletRadius);
+            if (human.isInvincible()) {
+                return 0; // ignora: bot não consegue comer o player enquanto invencível
             }
         }
+        double loserArea = areaOf(loser);
+        loser.delete();
 
+        spawnPalletsFromLoser(loser, loserArea, pallets);
+        return pointsForKill(winner, loser);
+    }
+
+    // CHANGED: helpers extraídos do metodo principal
+
+    private boolean intersects(BasePlayer a, BasePlayer b) {    // CHANGED
+        double dx = a.getX() - b.getX();
+        double dy = a.getY() - b.getY();
+        double distance = Math.sqrt(dx * dx + dy * dy);
+        double radiusSum = a.getRadius() + b.getRadius();
+        return distance < radiusSum;
+    }
+
+    private BasePlayer pickWinner(BasePlayer a, BasePlayer b) {
+        return (a.getRadius() >= b.getRadius()) ? a : b;
+    }
+
+    private double areaOf(BasePlayer p) {
+        return Math.PI * p.getRadius() * p.getRadius();
+    }
+
+    private void spawnPalletsFromLoser(BasePlayer loser, double loserArea, Pallets pallets) {
+        double palletRadius = 5.0;
+        double palletArea = Math.PI * palletRadius * palletRadius;
+        int numPallets = (int) (loserArea / palletArea);
+
+        double centerX = loser.getX();
+        double centerY = loser.getY();
+
+        for (int i = 0; i < numPallets; i++) {
+            double angle = Math.random() * 2 * Math.PI;
+            double spread = Math.random() * 30; // spread within 30px radius
+            double px = centerX + Math.cos(angle) * spread;
+            double py = centerY + Math.sin(angle) * spread;
+
+            pallets.addPallet(px, py, palletRadius);
+        }
+    }
+
+    private int pointsForKill(BasePlayer winner, BasePlayer loser) { // CHANGED
+        boolean humanWins = winner instanceof com.codeforall.online.game.entities.Player;
+        boolean botLoses  = loser  instanceof com.codeforall.online.game.entities.BotPlayer;
+        return (humanWins && botLoses) ? 50 : 0; // alinhar com Game/BOT_POINTS
     }
 }

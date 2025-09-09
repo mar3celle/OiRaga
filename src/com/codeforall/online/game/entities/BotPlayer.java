@@ -1,7 +1,8 @@
 package com.codeforall.online.game.entities;
 
 import com.codeforall.online.game.Game;
-import com.codeforall.online.game.entities.Player;
+import com.codeforall.online.game.grid.Grid;
+
 import java.util.Random;
 
 public class BotPlayer extends BasePlayer {
@@ -10,9 +11,15 @@ public class BotPlayer extends BasePlayer {
     private final Random rand = new Random();
 
     // fields for hunt ai
-    private double targetX, targetY;
+    private double targetX;
+    private double targetY;
     private final Random rng = new Random();
 
+    private static final double AGGRO_DIST   = 600.0;         // distance to react to target
+    private static final double SIZE_RATIO   = 1.15;
+    private static final double STEER_ALPHA  = 0.08;          // suaviza a direção(sem isso deu ruim)
+    private static final double RETARGET_SEC = 5.0;           // change target
+    private static final double TARGET_NEAR  = 20.0;
 
     public BotPlayer(double x, double y, double radius) {
         super(x, y, radius);
@@ -27,26 +34,26 @@ public class BotPlayer extends BasePlayer {
     // Hunt ai
     private void pickNewTarget(int worldW, int worldH) {
         double margin = 30;
-        targetX = margin + rng.nextDouble() * (worldW - 2 * margin);
-        targetY = margin + rng.nextDouble() * (worldH - 2 * margin);
-    }
-
-    @Override
-    public void update(double dt, int worldW, int worldH) {
+        int pad = Grid.PADDING;
+        // intervalo: [pad + margin, (worldW - margin)] e idem para Y
+        targetX = pad + margin + rng.nextDouble() * ((worldW - pad) - 2 * margin);
+        targetY = pad + margin + rng.nextDouble() * ((worldH - pad) - 2 * margin);
+        }
+    private void ensureTarget(double dt, int worldW, int worldH) {
         timeSinceLastChange += dt;
-
-        // update target
         double distToTarget = Math.hypot(targetX - getX(), targetY - getY());
-        if (distToTarget < 20 || rng.nextDouble() < 0.005 || timeSinceLastChange > 5.0) {
+        if (distToTarget < TARGET_NEAR || rng.nextDouble() < 0.005 || timeSinceLastChange > RETARGET_SEC) {
             pickNewTarget(worldW, worldH);
             timeSinceLastChange = 0;
         }
+    }
 
-        // AI logic: analyse other players
+    // encontra o player/bot vivo mais próximo
+    private BasePlayer findClosestAlive() {
         BasePlayer closest = null;
         double closestDist = Double.MAX_VALUE;
 
-        for (BasePlayer other : Game.players) {
+        for (BasePlayer other : Game.players) {                    // mantém tua fonte de verdade
             if (other == this || !other.isAlive()) continue;
 
             double dx = other.getX() - getX();
@@ -58,24 +65,61 @@ public class BotPlayer extends BasePlayer {
                 closest = other;
             }
         }
+        return closest;
+    }
 
-        if (closest != null && closestDist < 600) {
-            boolean otherMuchBigger = closest.getRadius() >= this.getRadius() * 1.15;
-            boolean botMuchBigger = this.getRadius() >= closest.getRadius() * 1.15;
-
-            if (otherMuchBigger) {
-                setDirection(getX() - closest.getX(), getY() - closest.getY()); // fugir
-            } else if (botMuchBigger) {
-                setDirection(closest.getX() - getX(), closest.getY() - getY()); // perseguir
-            } else {
-                setDirection(targetX - getX(), targetY - getY()); // vaguear
-            }
-        } else {
-            setDirection(targetX - getX(), targetY - getY()); // vaguear
+    // CHANGED: decide se foge, persegue ou vagueia
+    private void decideBehavior(BasePlayer closest) {
+        if (closest == null) {
+            steer(targetX - getX(), targetY - getY());            // vaguear
+            return;
         }
 
+        double dx = closest.getX() - getX();
+        double dy = closest.getY() - getY();
+        double dist = Math.hypot(dx, dy);
+
+        if (dist < AGGRO_DIST) {
+            boolean otherMuchBigger = closest.getRadius() >= this.getRadius() * SIZE_RATIO;
+            boolean botMuchBigger   = this.getRadius()  >= closest.getRadius() * SIZE_RATIO;
+
+            if (otherMuchBigger) {
+                steer(-dx, -dy);                                  // fugir
+            } else if (botMuchBigger) {
+                steer(dx, dy);                                    // perseguir
+            } else {
+                steer(targetX - getX(), targetY - getY());        // vaguear
+            }
+        } else {
+            steer(targetX - getX(), targetY - getY());            // longe → vaguear
+        }
+    }
+
+    //CHANGED: suaviza a direção
+    private void steer(double desiredX, double desiredY) {
+        double len = Math.hypot(desiredX, desiredY);
+        if (len < 1e-6) return;
+        desiredX /= len;
+        desiredY /= len;
+
+        // mistura direção atual com direção desejada
+        this.dx = (1 - STEER_ALPHA) * this.dx + STEER_ALPHA * desiredX;
+        this.dy = (1 - STEER_ALPHA) * this.dy + STEER_ALPHA * desiredY;
+
+        double l = Math.hypot(this.dx, this.dy);
+        if (l > 1e-6) { this.dx /= l; this.dy /= l; }
+    }
+
+    // isola o movimento/clamp
+    private void move(double dt, int worldW, int worldH) {
         updatePosition(dt, worldW, worldH);
     }
 
-
+    @Override
+    public void update(double dt, int worldW, int worldH) {
+        ensureTarget(dt, worldW, worldH);
+        BasePlayer closest = findClosestAlive();
+        decideBehavior(closest);
+        move(dt, worldW, worldH);
+    }
 }
